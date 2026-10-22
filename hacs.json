@@ -1,0 +1,5 @@
+{
+  "name": "Sit Solar inverter",
+  "render_readme": true,
+  "homeassistant": "2024.12.0"
+}

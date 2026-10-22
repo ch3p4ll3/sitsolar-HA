@@ -1,0 +1,243 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connetti al Si-Dongle-L",
+        "description": "Inserisci l'indirizzo IP del dongle e il numero di serie stampato su di esso. La seriale viene usata come password per il protocollo crittografico del dongle e non viene mai salvata in chiaro al di fuori di questa voce.",
+        "data": {
+          "host": "Host",
+          "dongle_serial": "Numero di serie del dongle",
+          "scan_interval": "Intervallo di interrogazione (secondi)"
+        },
+        "data_description": {
+          "host": "Indirizzo IP o hostname del dongle WiFi Si-Dongle-L (porta 7078).",
+          "dongle_serial": "Numero di serie stampato sul dongle, ad es. DGLxxxxxxxx.",
+          "scan_interval": "Quanto spesso interrogare l'inverter. Minimo 15 s. Lascia 30 s a meno che tu non sia sicuro che il dongle tolleri interrogazioni più rapide."
+        }
+      },
+      "reconfigure": {
+        "title": "Aggiorna l'indirizzo del dongle",
+        "description": "Cambia l'indirizzo IP del dongle esistente. La seriale del dongle viene mantenuta.",
+        "data": {
+          "host": "Host"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-inserisci la seriale del dongle",
+        "description": "Il dongle ha rifiutato la seriale salvata. Inserisci la seriale stampata sul dongle.",
+        "data": {
+          "dongle_serial": "Numero di serie del dongle"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Impossibile connettersi al dongle a quell'indirizzo.",
+      "invalid_auth": "Il dongle ha rifiutato il numero di serie (mismatch HMAC). Controlla la seriale stampata sul dongle.",
+      "unknown": "Errore imprevisto. Controlla il log di Home Assistant."
+    },
+    "abort": {
+      "already_configured": "Questo inverter è già configurato."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opzioni Sit Solar",
+        "data": {
+          "scan_interval": "Intervallo di interrogazione (secondi)"
+        },
+        "data_description": {
+          "scan_interval": "Quanto spesso interrogare l'inverter. Minimo 15 s."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "operation_status": {
+        "name": "Stato di funzionamento",
+        "state": {
+          "waiting": "Attesa",
+          "self_check": "Autotest",
+          "normal": "Normale",
+          "flash": "Modalità flash",
+          "error": "Errore",
+          "debug": "Debug",
+          "off_grid": "Fuori rete",
+          "unknown": "Sconosciuto"
+        }
+      },
+      "mppt_input_type": {
+        "name": "Tipo di ingresso MPPT",
+        "state": {
+          "no_input": "Nessun ingresso",
+          "single_string": "Stringa singola",
+          "two_parallel": "Due stringhe in parallelo",
+          "different_panels": "Pannelli diversi in parallelo",
+          "same_panels": "Pannelli uguali in parallelo",
+          "unknown": "Sconosciuto"
+        }
+      },
+      "mppt_string_number": { "name": "Numero di stringhe MPPT" },
+      "pv_string_number": { "name": "Numero di stringhe PV" },
+      "auto_start_remaining": { "name": "Avvio automatico residuo" },
+      "alarm_status": { "name": "Stato allarmi" },
+      "cabin_temperature": { "name": "Temperatura inverter" },
+      "heat_sink_temperature": { "name": "Temperatura dissipatore" },
+      "buckboost_temperature": { "name": "Temperatura buck-boost" },
+      "boost_module1_temperature": { "name": "Temperatura modulo boost 1" },
+      "dc_ac_module_temperature": { "name": "Temperatura modulo DC/AC" },
+      "rated_power": { "name": "Potenza nominale" },
+      "dsp1_version": { "name": "Versione firmware DSP1" },
+      "dsp2_version": { "name": "Versione firmware DSP2" },
+      "arm_software_version": { "name": "Versione firmware ARM" },
+      "bms_software_version": { "name": "Versione firmware BMS" },
+      "dongle_clock": { "name": "Orologio del dongle" },
+      "total_pv_power": { "name": "Potenza PV" },
+      "pv1_voltage": { "name": "Tensione PV1" },
+      "pv1_current": { "name": "Corrente PV1" },
+      "pv1_power": { "name": "Potenza PV1" },
+      "pv1_energy_today": { "name": "Energia PV1 oggi" },
+      "pv2_voltage": { "name": "Tensione PV2" },
+      "pv2_current": { "name": "Corrente PV2" },
+      "pv2_power": { "name": "Potenza PV2" },
+      "pv2_energy_today": { "name": "Energia PV2 oggi" },
+      "inverter_p": { "name": "Potenza attiva" },
+      "inverter_q": { "name": "Potenza reattiva" },
+      "apparent_power_calc": { "name": "Potenza apparente" },
+      "apparent_power": { "name": "Potenza apparente (registro grezzo)" },
+      "power_factor_calc": { "name": "Fattore di potenza" },
+      "power_factor": { "name": "Fattore di potenza (setpoint, registro grezzo)" },
+      "grid_frequency": { "name": "Frequenza di rete" },
+      "phase_r_voltage": { "name": "Tensione di rete" },
+      "phase_r_current": { "name": "Corrente di rete" },
+      "phase_r_power": { "name": "Potenza di rete" },
+      "phase_s_voltage": { "name": "Tensione fase S" },
+      "phase_s_current": { "name": "Corrente fase S" },
+      "phase_s_power": { "name": "Potenza fase S" },
+      "phase_t_voltage": { "name": "Tensione fase T" },
+      "phase_t_current": { "name": "Corrente fase T" },
+      "phase_t_power": { "name": "Potenza fase T" },
+      "grid_line_rs": { "name": "Tensione linea RS" },
+      "grid_line_st": { "name": "Tensione linea ST" },
+      "grid_line_tr": { "name": "Tensione linea TR" },
+      "grid_n_pe_voltage": { "name": "Tensione N-PE" },
+      "grid_exchange_power": { "name": "Potenza scambiata con la rete" },
+      "home_consumption": { "name": "Consumo domestico (stima)" },
+      "meter_total_p": { "name": "Potenza attiva contatore" },
+      "meter_total_q": { "name": "Potenza reattiva contatore" },
+      "meter_power_factor": { "name": "Fattore di potenza contatore" },
+      "energy_to_grid_total": { "name": "Energia esportata (totale)" },
+      "energy_from_grid_total": { "name": "Energia importata (totale)" },
+      "meter_r_voltage": { "name": "Tensione contatore" },
+      "meter_r_current": { "name": "Corrente contatore" },
+      "meter_r_frequency": { "name": "Frequenza contatore" },
+      "meter_r_power": { "name": "Potenza contatore" },
+      "meter_s_voltage": { "name": "Tensione contatore fase S" },
+      "meter_s_current": { "name": "Corrente contatore fase S" },
+      "meter_s_frequency": { "name": "Frequenza contatore fase S" },
+      "meter_s_power": { "name": "Potenza contatore fase S" },
+      "meter_t_voltage": { "name": "Tensione contatore fase T" },
+      "meter_t_current": { "name": "Corrente contatore fase T" },
+      "meter_t_frequency": { "name": "Frequenza contatore fase T" },
+      "meter_t_power": { "name": "Potenza contatore fase T" },
+      "battery_soc": { "name": "Carica batteria" },
+      "battery_soh": { "name": "Salute batteria" },
+      "battery_voltage": { "name": "Tensione batteria" },
+      "battery_current": { "name": "Corrente batteria" },
+      "battery_power": { "name": "Potenza batteria" },
+      "battery_charge_power": { "name": "Potenza di carica batteria" },
+      "battery_discharge_power": { "name": "Potenza di scarica batteria" },
+      "battery_charge_current": { "name": "Corrente di carica batteria" },
+      "battery_discharge_current": { "name": "Corrente di scarica batteria" },
+      "battery_flow": {
+        "name": "Flusso batteria",
+        "state": {
+          "charging": "In carica",
+          "discharging": "In scarica",
+          "idle": "A riposo"
+        }
+      },
+      "battery_status": {
+        "name": "Stato batteria",
+        "state": {
+          "sleep": "Sleep",
+          "charging": "In carica",
+          "discharging": "In scarica",
+          "idle": "A riposo",
+          "unknown": "Sconosciuto"
+        }
+      },
+      "bms_status": {
+        "name": "Comunicazione BMS",
+        "state": {
+          "fail": "Errore",
+          "ok": "OK",
+          "not_chosen": "Batteria non selezionata",
+          "unknown": "Sconosciuto"
+        }
+      },
+      "battery_temperature": { "name": "Temperatura batteria" },
+      "battery_cycles": { "name": "Cicli batteria" },
+      "max_charge_voltage": { "name": "Tensione massima di carica" },
+      "max_charge_current": { "name": "Corrente massima di carica" },
+      "min_discharge_voltage": { "name": "Tensione minima di scarica" },
+      "max_discharge_current": { "name": "Corrente massima di scarica" },
+      "forced_mode_request": { "name": "Richiesta modalità forzata" },
+      "highest_cell_voltage": { "name": "Tensione cellula più alta" },
+      "lowest_cell_voltage": { "name": "Tensione cellula più bassa" },
+      "highest_cell_temperature": { "name": "Temperatura cellula più alta" },
+      "lowest_cell_temperature": { "name": "Temperatura cellula più bassa" },
+      "eps_voltage_r": { "name": "Tensione EPS" },
+      "eps_current_r": { "name": "Corrente EPS" },
+      "eps_p_r": { "name": "Potenza EPS" },
+      "eps_voltage_s": { "name": "Tensione EPS fase S" },
+      "eps_current_s": { "name": "Corrente EPS fase S" },
+      "eps_p_s": { "name": "Potenza EPS fase S" },
+      "eps_voltage_t": { "name": "Tensione EPS fase T" },
+      "eps_current_t": { "name": "Corrente EPS fase T" },
+      "eps_p_t": { "name": "Potenza EPS fase T" },
+      "eps_total_p": { "name": "Potenza totale EPS" },
+      "eps_total_q": { "name": "Potenza reattiva totale EPS" },
+      "eps_voltage_rs": { "name": "Tensione EPS RS" },
+      "eps_voltage_st": { "name": "Tensione EPS ST" },
+      "eps_voltage_tr": { "name": "Tensione EPS TR" },
+      "eps_voltage_n_pe": { "name": "Tensione EPS N-PE" },
+      "energy_from_inverter_total": { "name": "Energia dall'inverter (totale)" },
+      "energy_to_inverter_total": { "name": "Energia verso l'inverter (totale)" },
+      "energy_from_pv_total": { "name": "Energia dalla PV (totale)" },
+      "energy_to_battery_total": { "name": "Energia verso la batteria (totale)" },
+      "energy_from_battery_total": { "name": "Energia dalla batteria (totale)" },
+      "energy_grid_to_battery_total": { "name": "Energia dalla rete alla batteria (totale)" },
+      "energy_to_eps_total": { "name": "Energia verso l'EPS (totale)" },
+      "energy_today_dc": { "name": "Energia DC oggi" },
+      "energy_today_battery_charge": { "name": "Energia di carica batteria oggi" },
+      "energy_today_battery_discharge": { "name": "Energia di scarica batteria oggi" },
+      "energy_today_grid_charge": { "name": "Energia di carica da rete oggi" },
+      "energy_today_sell_to_grid": { "name": "Energia esportata oggi" },
+      "energy_today_buy_from_grid": { "name": "Energia importata oggi" },
+      "energy_today_eps": { "name": "Energia EPS oggi" },
+      "energy_today_battery_from_pv": { "name": "Carica batteria da PV oggi" },
+      "energy_today_eps_from_pv": { "name": "EPS da PV oggi" },
+      "energy_today_pv_sell_to_grid": { "name": "PV esportata oggi" },
+      "energy_today_battery_sell_to_grid": { "name": "Batteria esportata oggi" },
+      "energy_today_battery_eps": { "name": "Batteria verso EPS oggi" },
+      "energy_total_pv_charge_battery": { "name": "Batteria caricata da PV (totale)" },
+      "energy_total_eps_from_pv": { "name": "EPS da PV (totale)" },
+      "energy_total_pv_sell_to_grid": { "name": "PV esportata (totale)" },
+      "energy_total_battery_to_grid": { "name": "Batteria esportata (totale)" },
+      "energy_total_battery_to_eps": { "name": "Batteria verso EPS (totale)" },
+      "hours_generation_total": { "name": "Ore di generazione (totale)" },
+      "hours_eps_total": { "name": "Ore di EPS (totale)" },
+      "hours_today_generation": { "name": "Ore di generazione oggi" },
+      "last_successful_update": { "name": "Ultimo aggiornamento riuscito" },
+      "poll_latency": { "name": "Latenza interrogazione" },
+      "unreadable_ranges": { "name": "Intervalli di registri illeggibili" }
+    },
+    "binary_sensor": {
+      "problem": { "name": "Problema" },
+      "battery_charge_forbidden": { "name": "Carica batteria vietata" },
+      "battery_discharge_forbidden": { "name": "Scarica batteria vietata" }
+    }
+  }
+}

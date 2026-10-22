@@ -1,0 +1,243 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to the Si-Dongle-L",
+        "description": "Enter the dongle's IP address and the serial number printed on it. The serial is used as the password for the dongle's encrypted protocol and is never stored in plain text outside this entry.",
+        "data": {
+          "host": "Host",
+          "dongle_serial": "Dongle serial number",
+          "scan_interval": "Polling interval (seconds)"
+        },
+        "data_description": {
+          "host": "IP address or hostname of the Si-Dongle-L WiFi dongle (port 7078).",
+          "dongle_serial": "Serial number printed on the dongle, e.g. DGLxxxxxxxx.",
+          "scan_interval": "How often to poll the inverter. Minimum 15 s. Leave at 30 s unless you know the dongle can take faster polling."
+        }
+      },
+      "reconfigure": {
+        "title": "Update the dongle address",
+        "description": "Change the IP address of the existing dongle. The dongle serial is kept.",
+        "data": {
+          "host": "Host"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-enter the dongle serial",
+        "description": "The dongle rejected the stored serial number. Enter the serial printed on the dongle.",
+        "data": {
+          "dongle_serial": "Dongle serial number"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Unable to connect to the dongle at that address.",
+      "invalid_auth": "The dongle rejected the serial number (HMAC mismatch). Check the serial printed on the dongle.",
+      "unknown": "Unexpected error. Check the Home Assistant log for details."
+    },
+    "abort": {
+      "already_configured": "This inverter is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Sit Solar options",
+        "data": {
+          "scan_interval": "Polling interval (seconds)"
+        },
+        "data_description": {
+          "scan_interval": "How often to poll the inverter. Minimum 15 s."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "operation_status": {
+        "name": "Operating state",
+        "state": {
+          "waiting": "Waiting",
+          "self_check": "Self test",
+          "normal": "Normal",
+          "flash": "Flash mode",
+          "error": "Error",
+          "debug": "Debug",
+          "off_grid": "Off grid",
+          "unknown": "Unknown"
+        }
+      },
+      "mppt_input_type": {
+        "name": "MPPT input type",
+        "state": {
+          "no_input": "No input",
+          "single_string": "Single string",
+          "two_parallel": "Two strings parallel",
+          "different_panels": "Different panels parallel",
+          "same_panels": "Same panels parallel",
+          "unknown": "Unknown"
+        }
+      },
+      "mppt_string_number": { "name": "MPPT string count" },
+      "pv_string_number": { "name": "PV string count" },
+      "auto_start_remaining": { "name": "Auto start remaining" },
+      "alarm_status": { "name": "Alarm status" },
+      "cabin_temperature": { "name": "Inverter temperature" },
+      "heat_sink_temperature": { "name": "Heatsink temperature" },
+      "buckboost_temperature": { "name": "Buck-boost temperature" },
+      "boost_module1_temperature": { "name": "Boost module 1 temperature" },
+      "dc_ac_module_temperature": { "name": "DC/AC module temperature" },
+      "rated_power": { "name": "Rated power" },
+      "dsp1_version": { "name": "DSP1 firmware version" },
+      "dsp2_version": { "name": "DSP2 firmware version" },
+      "arm_software_version": { "name": "ARM firmware version" },
+      "bms_software_version": { "name": "BMS firmware version" },
+      "dongle_clock": { "name": "Dongle clock" },
+      "total_pv_power": { "name": "PV power" },
+      "pv1_voltage": { "name": "PV1 voltage" },
+      "pv1_current": { "name": "PV1 current" },
+      "pv1_power": { "name": "PV1 power" },
+      "pv1_energy_today": { "name": "PV1 energy today" },
+      "pv2_voltage": { "name": "PV2 voltage" },
+      "pv2_current": { "name": "PV2 current" },
+      "pv2_power": { "name": "PV2 power" },
+      "pv2_energy_today": { "name": "PV2 energy today" },
+      "inverter_p": { "name": "Active power" },
+      "inverter_q": { "name": "Reactive power" },
+      "apparent_power_calc": { "name": "Apparent power" },
+      "apparent_power": { "name": "Apparent power (raw register)" },
+      "power_factor_calc": { "name": "Power factor" },
+      "power_factor": { "name": "Power factor (setpoint, raw register)" },
+      "grid_frequency": { "name": "Grid frequency" },
+      "phase_r_voltage": { "name": "Grid voltage" },
+      "phase_r_current": { "name": "Grid current" },
+      "phase_r_power": { "name": "Grid power" },
+      "phase_s_voltage": { "name": "S-phase voltage" },
+      "phase_s_current": { "name": "S-phase current" },
+      "phase_s_power": { "name": "S-phase power" },
+      "phase_t_voltage": { "name": "T-phase voltage" },
+      "phase_t_current": { "name": "T-phase current" },
+      "phase_t_power": { "name": "T-phase power" },
+      "grid_line_rs": { "name": "RS line voltage" },
+      "grid_line_st": { "name": "ST line voltage" },
+      "grid_line_tr": { "name": "TR line voltage" },
+      "grid_n_pe_voltage": { "name": "N-PE voltage" },
+      "grid_exchange_power": { "name": "Grid exchange power" },
+      "home_consumption": { "name": "Home consumption (estimated)" },
+      "meter_total_p": { "name": "Meter active power" },
+      "meter_total_q": { "name": "Meter reactive power" },
+      "meter_power_factor": { "name": "Meter power factor" },
+      "energy_to_grid_total": { "name": "Energy exported (total)" },
+      "energy_from_grid_total": { "name": "Energy imported (total)" },
+      "meter_r_voltage": { "name": "Meter voltage" },
+      "meter_r_current": { "name": "Meter current" },
+      "meter_r_frequency": { "name": "Meter frequency" },
+      "meter_r_power": { "name": "Meter power" },
+      "meter_s_voltage": { "name": "Meter S-phase voltage" },
+      "meter_s_current": { "name": "Meter S-phase current" },
+      "meter_s_frequency": { "name": "Meter S-phase frequency" },
+      "meter_s_power": { "name": "Meter S-phase power" },
+      "meter_t_voltage": { "name": "Meter T-phase voltage" },
+      "meter_t_current": { "name": "Meter T-phase current" },
+      "meter_t_frequency": { "name": "Meter T-phase frequency" },
+      "meter_t_power": { "name": "Meter T-phase power" },
+      "battery_soc": { "name": "Battery charge" },
+      "battery_soh": { "name": "Battery health" },
+      "battery_voltage": { "name": "Battery voltage" },
+      "battery_current": { "name": "Battery current" },
+      "battery_power": { "name": "Battery power" },
+      "battery_charge_power": { "name": "Battery charge power" },
+      "battery_discharge_power": { "name": "Battery discharge power" },
+      "battery_charge_current": { "name": "Battery charge current" },
+      "battery_discharge_current": { "name": "Battery discharge current" },
+      "battery_flow": {
+        "name": "Battery flow",
+        "state": {
+          "charging": "Charging",
+          "discharging": "Discharging",
+          "idle": "Idle"
+        }
+      },
+      "battery_status": {
+        "name": "Battery status",
+        "state": {
+          "sleep": "Sleep",
+          "charging": "Charging",
+          "discharging": "Discharging",
+          "idle": "Idle",
+          "unknown": "Unknown"
+        }
+      },
+      "bms_status": {
+        "name": "BMS communication",
+        "state": {
+          "fail": "Fail",
+          "ok": "OK",
+          "not_chosen": "Battery not selected",
+          "unknown": "Unknown"
+        }
+      },
+      "battery_temperature": { "name": "Battery temperature" },
+      "battery_cycles": { "name": "Battery cycles" },
+      "max_charge_voltage": { "name": "Max charge voltage" },
+      "max_charge_current": { "name": "Max charge current" },
+      "min_discharge_voltage": { "name": "Min discharge voltage" },
+      "max_discharge_current": { "name": "Max discharge current" },
+      "forced_mode_request": { "name": "Forced mode request" },
+      "highest_cell_voltage": { "name": "Highest cell voltage" },
+      "lowest_cell_voltage": { "name": "Lowest cell voltage" },
+      "highest_cell_temperature": { "name": "Highest cell temperature" },
+      "lowest_cell_temperature": { "name": "Lowest cell temperature" },
+      "eps_voltage_r": { "name": "EPS voltage" },
+      "eps_current_r": { "name": "EPS current" },
+      "eps_p_r": { "name": "EPS power" },
+      "eps_voltage_s": { "name": "EPS S-phase voltage" },
+      "eps_current_s": { "name": "EPS S-phase current" },
+      "eps_p_s": { "name": "EPS S-phase power" },
+      "eps_voltage_t": { "name": "EPS T-phase voltage" },
+      "eps_current_t": { "name": "EPS T-phase current" },
+      "eps_p_t": { "name": "EPS T-phase power" },
+      "eps_total_p": { "name": "EPS total power" },
+      "eps_total_q": { "name": "EPS total reactive power" },
+      "eps_voltage_rs": { "name": "EPS RS voltage" },
+      "eps_voltage_st": { "name": "EPS ST voltage" },
+      "eps_voltage_tr": { "name": "EPS TR voltage" },
+      "eps_voltage_n_pe": { "name": "EPS N-PE voltage" },
+      "energy_from_inverter_total": { "name": "Energy from inverter (total)" },
+      "energy_to_inverter_total": { "name": "Energy to inverter (total)" },
+      "energy_from_pv_total": { "name": "Energy from PV (total)" },
+      "energy_to_battery_total": { "name": "Energy to battery (total)" },
+      "energy_from_battery_total": { "name": "Energy from battery (total)" },
+      "energy_grid_to_battery_total": { "name": "Energy from grid to battery (total)" },
+      "energy_to_eps_total": { "name": "Energy to EPS (total)" },
+      "energy_today_dc": { "name": "DC energy today" },
+      "energy_today_battery_charge": { "name": "Battery charge energy today" },
+      "energy_today_battery_discharge": { "name": "Battery discharge energy today" },
+      "energy_today_grid_charge": { "name": "Grid charge energy today" },
+      "energy_today_sell_to_grid": { "name": "Energy exported today" },
+      "energy_today_buy_from_grid": { "name": "Energy imported today" },
+      "energy_today_eps": { "name": "EPS energy today" },
+      "energy_today_battery_from_pv": { "name": "Battery charge from PV today" },
+      "energy_today_eps_from_pv": { "name": "EPS from PV today" },
+      "energy_today_pv_sell_to_grid": { "name": "PV exported today" },
+      "energy_today_battery_sell_to_grid": { "name": "Battery exported today" },
+      "energy_today_battery_eps": { "name": "Battery to EPS today" },
+      "energy_total_pv_charge_battery": { "name": "PV charged battery (total)" },
+      "energy_total_eps_from_pv": { "name": "EPS from PV (total)" },
+      "energy_total_pv_sell_to_grid": { "name": "PV exported (total)" },
+      "energy_total_battery_to_grid": { "name": "Battery exported (total)" },
+      "energy_total_battery_to_eps": { "name": "Battery to EPS (total)" },
+      "hours_generation_total": { "name": "Generation runtime (total)" },
+      "hours_eps_total": { "name": "EPS runtime (total)" },
+      "hours_today_generation": { "name": "Generation runtime today" },
+      "last_successful_update": { "name": "Last successful update" },
+      "poll_latency": { "name": "Poll latency" },
+      "unreadable_ranges": { "name": "Unreadable register ranges" }
+    },
+    "binary_sensor": {
+      "problem": { "name": "Problem" },
+      "battery_charge_forbidden": { "name": "Battery charging forbidden" },
+      "battery_discharge_forbidden": { "name": "Battery discharging forbidden" }
+    }
+  }
+}

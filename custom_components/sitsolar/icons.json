@@ -1,0 +1,28 @@
+{
+  "entity": {
+    "sensor": {
+      "total_pv_power": { "default": "mdi:solar-power" },
+      "pv1_power": { "default": "mdi:solar-panel" },
+      "pv2_power": { "default": "mdi:solar-panel" },
+      "battery_soc": { "default": "mdi:battery-50" },
+      "battery_soh": { "default": "mdi:battery-heart-variant" },
+      "battery_power": { "default": "mdi:battery-charging" },
+      "battery_flow": {
+        "default": "mdi:battery-charging",
+        "state": {
+          "charging": "mdi:battery-charging",
+          "discharging": "mdi:battery-arrow-down",
+          "idle": "mdi:battery-outline"
+        }
+      },
+      "grid_exchange_power": { "default": "mdi:transmission-tower" },
+      "home_consumption": { "default": "mdi:home-lightning-bolt" },
+      "inverter_p": { "default": "mdi:sine-wave" },
+      "energy_to_grid_total": { "default": "mdi:transmission-tower-export" },
+      "energy_from_grid_total": { "default": "mdi:transmission-tower-import" }
+    },
+    "binary_sensor": {
+      "problem": { "default": "mdi:alert-circle" }
+    }
+  }
+}
