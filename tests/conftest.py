@@ -226,6 +226,9 @@ class FakeDongleClient:
         self.info: DongleInfo | None = None
         self.poll_result: dict[str, Any] | None = None
         self.poll_exception: Exception | None = None
+        #: One exception raised per poll() call, in order; when exhausted the
+        #: persistent ``poll_exception`` (if any) takes over again.
+        self.poll_exceptions: list[Exception] = []
         self.connect_exception: Exception | None = None
         self.read_result: tuple[int, ...] | None = None
         self.read_exception: Exception | None = None
@@ -246,6 +249,8 @@ class FakeDongleClient:
 
     async def poll(self, **kwargs: Any) -> dict[str, Any]:
         self.poll_calls += 1
+        if self.poll_exceptions:
+            raise self.poll_exceptions.pop(0)
         if self.poll_exception is not None:
             raise self.poll_exception
         return self.poll_result if self.poll_result is not None else {}

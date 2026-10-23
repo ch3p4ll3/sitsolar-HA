@@ -29,6 +29,11 @@ RECONNECT_RETRY_AFTER: Final = 90.0
 # Timeout for a single connect/handshake or full poll cycle (seconds).
 REQUEST_TIMEOUT: Final = 15.0
 
+# Pause before the one-shot retry of a poll that timed out on a connection
+# that is still open (seconds).  Short on purpose: the library discards the
+# late reply anyway, the pause only exists to ride out a momentary blip.
+POLL_RETRY_DELAY: Final = 2.0
+
 PLATFORMS: Final[list[Platform]] = [Platform.SENSOR, Platform.BINARY_SENSOR]
 
 # Diagnostic sensors are created disabled by default.

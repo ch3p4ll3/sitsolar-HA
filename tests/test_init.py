@@ -130,6 +130,103 @@ async def test_poll_failure_then_recovery(
     assert state_for(hass, "sensor", "battery_soc").state == "64"
 
 
+async def test_poll_timeout_is_retried_once(
+    hass: HomeAssistant, dongle: Any, mock_entry: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A timed-out poll on a live connection is retried, and recovers.
+
+    The library keeps the socket open when a request times out, so a single
+    WiFi blip must not cost a whole unavailable cycle: the coordinator
+    retries the poll once and the update still succeeds.
+    """
+    from custom_components.sitsolar import coordinator as coordinator_module
+
+    monkeypatch.setattr(coordinator_module, "POLL_RETRY_DELAY", 0.0)
+
+    mock_entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(mock_entry.entry_id)
+    await hass.async_block_till_done()
+    coordinator = mock_entry.runtime_data
+    client = dongle.client
+    client.poll_exceptions = [
+        DongleError("timed out waiting for a reply to 6407 after 15.0s")
+    ]
+    polls_before = client.poll_calls
+
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+
+    assert client.poll_calls == polls_before + 2  # the failed poll + the retry
+    assert client.connected is True  # a timeout never drops the connection
+    assert coordinator.last_update_success is True
+    assert state_for(hass, "sensor", "battery_soc").state == "64"
+
+
+async def test_poll_timeout_retries_only_once(
+    hass: HomeAssistant, dongle: Any, mock_entry: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Two timeouts in a row fail the update, but arm no reconnect lockout."""
+    from custom_components.sitsolar import coordinator as coordinator_module
+
+    monkeypatch.setattr(coordinator_module, "POLL_RETRY_DELAY", 0.0)
+
+    mock_entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(mock_entry.entry_id)
+    await hass.async_block_till_done()
+    coordinator = mock_entry.runtime_data
+    client = dongle.client
+    timeout = DongleError("timed out waiting for a reply to 6407 after 15.0s")
+    client.poll_exceptions = [timeout, timeout]
+    polls_before = client.poll_calls
+
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+
+    assert client.poll_calls == polls_before + 2  # exactly one retry, no loop
+    assert coordinator.last_update_success is False
+    assert state_for(hass, "sensor", "battery_soc").state == "unavailable"
+    # The connection is still considered alive, so no backoff is armed and
+    # the next tick polls normally instead of sitting out the lockout.
+    assert coordinator._reconnect_deadline == 0.0
+
+    client.poll_exceptions = []
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+
+    assert coordinator.last_update_success is True
+    assert state_for(hass, "sensor", "battery_soc").state == "64"
+
+
+async def test_dead_connection_is_not_retried(
+    hass: HomeAssistant, dongle: Any, mock_entry: Any
+) -> None:
+    """A failure on a dead link must not be retried; it arms the lockout."""
+    from homeassistant.helpers.update_coordinator import UpdateFailed
+
+    mock_entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(mock_entry.entry_id)
+    await hass.async_block_till_done()
+    coordinator = mock_entry.runtime_data
+    client = dongle.client
+
+    async def dying_poll(**kwargs: Any) -> dict[str, Any]:
+        """A poll that takes the connection down as it fails."""
+        client.poll_calls += 1
+        client.connected = False
+        raise DongleError("connection closed by the dongle")
+
+    client.poll = dying_poll
+    polls_before = client.poll_calls
+
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+
+    assert client.poll_calls == polls_before + 1  # no retry on a dead link
+    assert isinstance(coordinator.last_exception, UpdateFailed)
+    # The 90 s reconnect lockout is armed instead.
+    assert coordinator._reconnect_deadline > 0.0
+
+
 async def test_reconnect_lockout_survives_ha_retry_after(
     hass: HomeAssistant, dongle: Any, mock_entry: Any
 ) -> None:

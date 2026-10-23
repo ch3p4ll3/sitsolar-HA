@@ -98,6 +98,9 @@ accounts for this:
 * It keeps the socket **open between polls** (a background reader answers the
   dongle's ~37 s heartbeat), so a healthy connection is never torn down and
   never triggers the lockout.
+* A single **request timeout** on an otherwise live connection is retried
+  **once** before the update fails, so one WiFi blip does not make the entities
+  unavailable for a cycle.
 * If the connection is genuinely lost, it backs off for **90 s** — longer than
   the 75 s lockout — before reconnecting, instead of hammering the dongle.
 
