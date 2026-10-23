@@ -130,6 +130,59 @@ async def test_poll_failure_then_recovery(
     assert state_for(hass, "sensor", "battery_soc").state == "64"
 
 
+async def test_reconnect_lockout_survives_ha_retry_after(
+    hass: HomeAssistant, dongle: Any, mock_entry: Any
+) -> None:
+    """The lockout must keep working after HA consumes ``retry_after``.
+
+    HA's DataUpdateCoordinator stores ``UpdateFailed.retry_after`` in its own
+    ``_retry_after`` attribute and resets it to None as soon as it has
+    scheduled the next refresh.  Sharing that attribute name used to make
+    the second lockout tick crash with ``TypeError: unsupported operand
+    type(s) for -: 'NoneType' and 'float'``.
+    """
+    from homeassistant.helpers.update_coordinator import UpdateFailed
+
+    mock_entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(mock_entry.entry_id)
+    await hass.async_block_till_done()
+    coordinator = mock_entry.runtime_data
+    client = dongle.client
+    assert client.connect_calls == 1
+
+    # The connection drops: the next connect attempt fails like the real
+    # "Connection reset by peer" does.
+    client.connected = False
+    client.connect_exception = DongleError("connection lost: [Errno 104]")
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+
+    assert coordinator.last_update_success is False
+    assert isinstance(coordinator.last_exception, UpdateFailed)
+    # The failed connect attempt armed the backoff.
+    assert client.connect_calls == 2
+
+    # The next tick lands inside the lockout window: it must fail with
+    # UpdateFailed, not with a TypeError, and must not try to reconnect.
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+
+    assert coordinator.last_update_success is False
+    assert isinstance(coordinator.last_exception, UpdateFailed)
+    assert "lockout" in str(coordinator.last_exception)
+    assert client.connect_calls == 2
+
+    # Once the deadline passes the coordinator reconnects and recovers.
+    coordinator._reconnect_deadline = 0.0
+    client.connect_exception = None
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+
+    assert coordinator.last_update_success is True
+    assert client.connect_calls == 3
+    assert state_for(hass, "sensor", "battery_soc").state == "64"
+
+
 async def test_unreadable_block_hides_entities(
     hass: HomeAssistant, dongle: Any, mock_entry: Any
 ) -> None:

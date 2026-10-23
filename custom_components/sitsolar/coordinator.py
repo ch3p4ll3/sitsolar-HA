@@ -171,7 +171,11 @@ class SitSolarCoordinator(DataUpdateCoordinator[SitSolarData]):
             update_interval=update_interval_for(entry),
         )
         self.client = client
-        self._retry_after: float = 0.0
+        # Absolute ``time.monotonic()`` deadline for the next reconnect
+        # attempt.  Deliberately *not* called ``_retry_after``: that name
+        # belongs to HA's DataUpdateCoordinator, which resets it to None
+        # after consuming it.
+        self._reconnect_deadline: float = 0.0
         # Lifetime counters that have read a nonzero value at least once.
         # A counter that never leaves 0 is reported as unavailable rather
         # than as a stuck total_increasing sensor (see README).
@@ -252,9 +256,13 @@ class SitSolarCoordinator(DataUpdateCoordinator[SitSolarData]):
         inside, its failure would also run the bookkeeping below and push
         the backoff deadline forward on every tick, which would pin the
         integration unavailable for good.
+
+        The deadline is tracked in ``_reconnect_deadline`` because HA's
+        DataUpdateCoordinator owns an attribute named ``_retry_after``
+        and clears it to ``None`` once it has been consumed.
         """
         if not self.client.connected and (
-            remaining := self._retry_after - time.monotonic()
+            remaining := self._reconnect_deadline - time.monotonic()
         ) > 0:
             raise UpdateFailed(
                 "waiting out the dongle reconnect lockout",
@@ -274,7 +282,7 @@ class SitSolarCoordinator(DataUpdateCoordinator[SitSolarData]):
             ) from err
         except DongleError as err:
             if not self.client.connected:
-                self._retry_after = time.monotonic() + RECONNECT_RETRY_AFTER
+                self._reconnect_deadline = time.monotonic() + RECONNECT_RETRY_AFTER
                 _LOGGER.warning(
                     "connection to the dongle at %s is gone (%s); "
                     "backing off %.0f s for the reconnect lockout",
