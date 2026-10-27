@@ -56,5 +56,9 @@ LIFETIME_COUNTER_KEYS: Final[frozenset[str]] = frozenset(
         "energy_to_grid_total",
         "energy_from_grid_total",
         "battery_cycles",
+        # Second battery / second meter (library 0.3.0).
+        "battery2_cycles",
+        "meter2_energy_to_grid_total",
+        "meter2_energy_from_grid_total",
     }
 )

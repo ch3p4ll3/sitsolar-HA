@@ -70,11 +70,8 @@
       "mppt_input_type": {
         "name": "Tipo di ingresso MPPT",
         "state": {
-          "no_input": "Nessun ingresso",
-          "single_string": "Stringa singola",
-          "two_parallel": "Due stringhe in parallelo",
-          "different_panels": "Pannelli diversi in parallelo",
-          "same_panels": "Pannelli uguali in parallelo",
+          "independent_input": "Ingresso indipendente",
+          "same_panels_parallel": "Pannelli uguali in parallelo",
           "unknown": "Sconosciuto"
         }
       },
@@ -141,6 +138,44 @@
       "meter_t_current": { "name": "Corrente contatore fase T" },
       "meter_t_frequency": { "name": "Frequenza contatore fase T" },
       "meter_t_power": { "name": "Potenza contatore fase T" },
+      "meter_testing_process": { "name": "Avanzamento autotest contatore" },
+      "meter_testing_result": {
+        "name": "Risultato autotest contatore",
+        "state": {
+          "testing": "In corso",
+          "meter_comms_fail": "Comunicazione contatore fallita",
+          "battery_comms_fail": "Comunicazione batteria fallita",
+          "meter_ln_reversed": "Contatore L-N invertito (monofase)",
+          "meter_check_successful": "Verifica contatore riuscita",
+          "meter_disabled": "Contatore disabilitato",
+          "load_fluctuation_too_large": "Fluttuazione di carico troppo elevata",
+          "inverter_not_working": "Inverter non funzionante normalmente",
+          "other_fail": "Altro errore",
+          "ct_not_connected": "CT non collegato o copertura contatore aperta",
+          "current_lower_than_required": "Corrente inferiore al richiesto",
+          "incorrect_meter_wiring": "Cablaggio contatore errato (trifase a quattro fili)",
+          "meter_inverter_interaction_failed": "Interazione contatore-inverter fallita",
+          "meter_self_test_failed": "Autotest contatore fallito",
+          "unknown": "Sconosciuto"
+        }
+      },
+      "meter2_total_p": { "name": "Potenza attiva contatore 2" },
+      "meter2_total_q": { "name": "Potenza reattiva contatore 2" },
+      "meter2_power_factor": { "name": "Fattore di potenza contatore 2" },
+      "meter2_energy_to_grid_total": { "name": "Energia esportata contatore 2 (totale)" },
+      "meter2_energy_from_grid_total": { "name": "Energia importata contatore 2 (totale)" },
+      "meter2_r_voltage": { "name": "Tensione contatore 2" },
+      "meter2_r_current": { "name": "Corrente contatore 2" },
+      "meter2_r_frequency": { "name": "Frequenza contatore 2" },
+      "meter2_r_power": { "name": "Potenza contatore 2" },
+      "meter2_s_voltage": { "name": "Tensione contatore 2 fase S" },
+      "meter2_s_current": { "name": "Corrente contatore 2 fase S" },
+      "meter2_s_frequency": { "name": "Frequenza contatore 2 fase S" },
+      "meter2_s_power": { "name": "Potenza contatore 2 fase S" },
+      "meter2_t_voltage": { "name": "Tensione contatore 2 fase T" },
+      "meter2_t_current": { "name": "Corrente contatore 2 fase T" },
+      "meter2_t_frequency": { "name": "Frequenza contatore 2 fase T" },
+      "meter2_t_power": { "name": "Potenza contatore 2 fase T" },
       "battery_soc": { "name": "Carica batteria" },
       "battery_soh": { "name": "Salute batteria" },
       "battery_voltage": { "name": "Tensione batteria" },
@@ -188,6 +223,53 @@
       "lowest_cell_voltage": { "name": "Tensione cellula più bassa" },
       "highest_cell_temperature": { "name": "Temperatura cellula più alta" },
       "lowest_cell_temperature": { "name": "Temperatura cellula più bassa" },
+      "battery2_soc": { "name": "Carica batteria 2" },
+      "battery2_soh": { "name": "Salute batteria 2" },
+      "battery2_voltage": { "name": "Tensione batteria 2" },
+      "battery2_current": { "name": "Corrente batteria 2" },
+      "battery2_power": { "name": "Potenza batteria 2" },
+      "battery2_charge_power": { "name": "Potenza di carica batteria 2" },
+      "battery2_discharge_power": { "name": "Potenza di scarica batteria 2" },
+      "battery2_charge_current": { "name": "Corrente di carica batteria 2" },
+      "battery2_discharge_current": { "name": "Corrente di scarica batteria 2" },
+      "battery2_flow": {
+        "name": "Flusso batteria 2",
+        "state": {
+          "charging": "In carica",
+          "discharging": "In scarica",
+          "idle": "A riposo"
+        }
+      },
+      "battery2_status": {
+        "name": "Stato batteria 2",
+        "state": {
+          "sleep": "Sleep",
+          "charging": "In carica",
+          "discharging": "In scarica",
+          "idle": "A riposo",
+          "unknown": "Sconosciuto"
+        }
+      },
+      "battery2_bms_status": {
+        "name": "Comunicazione BMS 2",
+        "state": {
+          "fail": "Errore",
+          "ok": "OK",
+          "not_chosen": "Batteria non selezionata",
+          "unknown": "Sconosciuto"
+        }
+      },
+      "battery2_temperature": { "name": "Temperatura batteria 2" },
+      "battery2_cycles": { "name": "Cicli batteria 2" },
+      "battery2_max_charge_voltage": { "name": "Tensione massima di carica batteria 2" },
+      "battery2_max_charge_current": { "name": "Corrente massima di carica batteria 2" },
+      "battery2_min_discharge_voltage": { "name": "Tensione minima di scarica batteria 2" },
+      "battery2_max_discharge_current": { "name": "Corrente massima di scarica batteria 2" },
+      "battery2_forced_mode_request": { "name": "Richiesta modalità forzata batteria 2" },
+      "battery2_highest_cell_voltage": { "name": "Tensione cellula più alta batteria 2" },
+      "battery2_lowest_cell_voltage": { "name": "Tensione cellula più bassa batteria 2" },
+      "battery2_highest_cell_temperature": { "name": "Temperatura cellula più alta batteria 2" },
+      "battery2_lowest_cell_temperature": { "name": "Temperatura cellula più bassa batteria 2" },
       "eps_voltage_r": { "name": "Tensione EPS" },
       "eps_current_r": { "name": "Corrente EPS" },
       "eps_p_r": { "name": "Potenza EPS" },
@@ -237,7 +319,9 @@
     "binary_sensor": {
       "problem": { "name": "Problema" },
       "battery_charge_forbidden": { "name": "Carica batteria vietata" },
-      "battery_discharge_forbidden": { "name": "Scarica batteria vietata" }
+      "battery_discharge_forbidden": { "name": "Scarica batteria vietata" },
+      "battery2_charge_forbidden": { "name": "Carica batteria 2 vietata" },
+      "battery2_discharge_forbidden": { "name": "Scarica batteria 2 vietata" }
     }
   }
 }

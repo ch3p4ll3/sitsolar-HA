@@ -70,11 +70,8 @@
       "mppt_input_type": {
         "name": "MPPT input type",
         "state": {
-          "no_input": "No input",
-          "single_string": "Single string",
-          "two_parallel": "Two strings parallel",
-          "different_panels": "Different panels parallel",
-          "same_panels": "Same panels parallel",
+          "independent_input": "Independent input",
+          "same_panels_parallel": "Same panels parallel",
           "unknown": "Unknown"
         }
       },
@@ -141,6 +138,44 @@
       "meter_t_current": { "name": "Meter T-phase current" },
       "meter_t_frequency": { "name": "Meter T-phase frequency" },
       "meter_t_power": { "name": "Meter T-phase power" },
+      "meter_testing_process": { "name": "Meter self-test progress" },
+      "meter_testing_result": {
+        "name": "Meter self-test result",
+        "state": {
+          "testing": "Testing",
+          "meter_comms_fail": "Meter communications fail",
+          "battery_comms_fail": "Battery communications fail",
+          "meter_ln_reversed": "Meter L-N reversed (single phase meter)",
+          "meter_check_successful": "Meter check successful",
+          "meter_disabled": "Meter disabled",
+          "load_fluctuation_too_large": "Load fluctuation too large to judge",
+          "inverter_not_working": "Inverter not working normally",
+          "other_fail": "Other fail",
+          "ct_not_connected": "CT not connected or meter cover open",
+          "current_lower_than_required": "Current lower than required",
+          "incorrect_meter_wiring": "Incorrect meter wiring (three-phase four-wire)",
+          "meter_inverter_interaction_failed": "Meter and inverter interaction failed",
+          "meter_self_test_failed": "Meter self-test failed",
+          "unknown": "Unknown"
+        }
+      },
+      "meter2_total_p": { "name": "Meter 2 active power" },
+      "meter2_total_q": { "name": "Meter 2 reactive power" },
+      "meter2_power_factor": { "name": "Meter 2 power factor" },
+      "meter2_energy_to_grid_total": { "name": "Meter 2 energy exported (total)" },
+      "meter2_energy_from_grid_total": { "name": "Meter 2 energy imported (total)" },
+      "meter2_r_voltage": { "name": "Meter 2 voltage" },
+      "meter2_r_current": { "name": "Meter 2 current" },
+      "meter2_r_frequency": { "name": "Meter 2 frequency" },
+      "meter2_r_power": { "name": "Meter 2 power" },
+      "meter2_s_voltage": { "name": "Meter 2 S-phase voltage" },
+      "meter2_s_current": { "name": "Meter 2 S-phase current" },
+      "meter2_s_frequency": { "name": "Meter 2 S-phase frequency" },
+      "meter2_s_power": { "name": "Meter 2 S-phase power" },
+      "meter2_t_voltage": { "name": "Meter 2 T-phase voltage" },
+      "meter2_t_current": { "name": "Meter 2 T-phase current" },
+      "meter2_t_frequency": { "name": "Meter 2 T-phase frequency" },
+      "meter2_t_power": { "name": "Meter 2 T-phase power" },
       "battery_soc": { "name": "Battery charge" },
       "battery_soh": { "name": "Battery health" },
       "battery_voltage": { "name": "Battery voltage" },
@@ -188,6 +223,53 @@
       "lowest_cell_voltage": { "name": "Lowest cell voltage" },
       "highest_cell_temperature": { "name": "Highest cell temperature" },
       "lowest_cell_temperature": { "name": "Lowest cell temperature" },
+      "battery2_soc": { "name": "Battery 2 charge" },
+      "battery2_soh": { "name": "Battery 2 health" },
+      "battery2_voltage": { "name": "Battery 2 voltage" },
+      "battery2_current": { "name": "Battery 2 current" },
+      "battery2_power": { "name": "Battery 2 power" },
+      "battery2_charge_power": { "name": "Battery 2 charge power" },
+      "battery2_discharge_power": { "name": "Battery 2 discharge power" },
+      "battery2_charge_current": { "name": "Battery 2 charge current" },
+      "battery2_discharge_current": { "name": "Battery 2 discharge current" },
+      "battery2_flow": {
+        "name": "Battery 2 flow",
+        "state": {
+          "charging": "Charging",
+          "discharging": "Discharging",
+          "idle": "Idle"
+        }
+      },
+      "battery2_status": {
+        "name": "Battery 2 status",
+        "state": {
+          "sleep": "Sleep",
+          "charging": "Charging",
+          "discharging": "Discharging",
+          "idle": "Idle",
+          "unknown": "Unknown"
+        }
+      },
+      "battery2_bms_status": {
+        "name": "BMS 2 communication",
+        "state": {
+          "fail": "Fail",
+          "ok": "OK",
+          "not_chosen": "Battery not selected",
+          "unknown": "Unknown"
+        }
+      },
+      "battery2_temperature": { "name": "Battery 2 temperature" },
+      "battery2_cycles": { "name": "Battery 2 cycles" },
+      "battery2_max_charge_voltage": { "name": "Battery 2 max charge voltage" },
+      "battery2_max_charge_current": { "name": "Battery 2 max charge current" },
+      "battery2_min_discharge_voltage": { "name": "Battery 2 min discharge voltage" },
+      "battery2_max_discharge_current": { "name": "Battery 2 max discharge current" },
+      "battery2_forced_mode_request": { "name": "Battery 2 forced mode request" },
+      "battery2_highest_cell_voltage": { "name": "Battery 2 highest cell voltage" },
+      "battery2_lowest_cell_voltage": { "name": "Battery 2 lowest cell voltage" },
+      "battery2_highest_cell_temperature": { "name": "Battery 2 highest cell temperature" },
+      "battery2_lowest_cell_temperature": { "name": "Battery 2 lowest cell temperature" },
       "eps_voltage_r": { "name": "EPS voltage" },
       "eps_current_r": { "name": "EPS current" },
       "eps_p_r": { "name": "EPS power" },
@@ -237,7 +319,9 @@
     "binary_sensor": {
       "problem": { "name": "Problem" },
       "battery_charge_forbidden": { "name": "Battery charging forbidden" },
-      "battery_discharge_forbidden": { "name": "Battery discharging forbidden" }
+      "battery_discharge_forbidden": { "name": "Battery discharging forbidden" },
+      "battery2_charge_forbidden": { "name": "Battery 2 charging forbidden" },
+      "battery2_discharge_forbidden": { "name": "Battery 2 discharging forbidden" }
     }
   }
 }

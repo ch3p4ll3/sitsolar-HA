@@ -138,6 +138,26 @@ DEFAULT_POLL_VALUES: dict[str, Any] = {
     "lowest_cell_voltage": 3.298,
     "highest_cell_temperature": 25.0,
     "lowest_cell_temperature": 24.0,
+    # battery 2 (library 0.3.0)
+    "battery2_status": 1,  # charge
+    "battery2_bms_status": 1,  # ok
+    "battery2_voltage": 52.8,
+    "battery2_current": -2.1,
+    "battery2_power": -111,
+    "battery2_temperature": 23.0,
+    "battery2_soc": 82,
+    "battery2_soh": 100,
+    "battery2_forbid_charge": 0,
+    "battery2_forbid_discharge": 0,
+    "battery2_cycles": 45,
+    "battery2_max_charge_voltage": 57.6,
+    "battery2_max_charge_current": 40.0,
+    "battery2_min_discharge_voltage": 44.0,
+    "battery2_max_discharge_current": 40.0,
+    "battery2_highest_cell_voltage": 3.305,
+    "battery2_lowest_cell_voltage": 3.299,
+    "battery2_highest_cell_temperature": 23.5,
+    "battery2_lowest_cell_temperature": 22.5,
     # meter
     "meter_r_voltage": 231.0,
     "meter_r_current": 1.42,
@@ -148,6 +168,19 @@ DEFAULT_POLL_VALUES: dict[str, Any] = {
     "meter_power_factor": 0.98,
     "energy_to_grid_total": 1234.5,
     "energy_from_grid_total": 2345.6,
+    # meter self test (library 0.3.0)
+    "meter_testing_process": 100,
+    "meter_testing_result": 4,  # meter check successful
+    # meter 2 (library 0.3.0)
+    "meter2_r_voltage": 229.5,
+    "meter2_r_current": 0.85,
+    "meter2_r_frequency": 50.0,
+    "meter2_r_power": 190,
+    "meter2_total_p": -190,
+    "meter2_total_q": 15,
+    "meter2_power_factor": 0.99,
+    "meter2_energy_to_grid_total": 55.4,
+    "meter2_energy_from_grid_total": 77.8,
     # generation_info (totals stay nonzero so they are not treated as stuck)
     "energy_from_inverter_total": 4567.8,
     "energy_to_inverter_total": 12.3,

@@ -3,7 +3,10 @@
 The problem binary sensor follows the Home Assistant convention: it is on
 whenever any DSP warning bit (30207-30210), a DSP warning code (30211) or a
 DSP error word (30200-30206) is active.  Battery error/warning/protection
-words are attached as attributes because their semantics are undocumented.
+words (both batteries, 32072-32080 and 32272-32280) are attached as
+attributes because their semantics are undocumented.  The charge/discharge
+forbidden flags exist once per battery (32069/32070 and, since library
+0.3.0, 32269/32270) and get one binary sensor each.
 """
 
 from __future__ import annotations
@@ -60,6 +63,20 @@ BINARY_DESCRIPTIONS: tuple[SitSolarBinaryDescription, ...] = (
         # 32070: 0 = dischargeable, 1 = discharge forbidden.
         compute=lambda data: _flag_on(data, "forbid_discharge"),
         requires=("forbid_discharge",),
+    ),
+    SitSolarBinaryDescription(
+        key="battery2_charge_forbidden",
+        translation_key="battery2_charge_forbidden",
+        # 32269 (library 0.3.0): second battery's mirror of 32069.
+        compute=lambda data: _flag_on(data, "battery2_forbid_charge"),
+        requires=("battery2_forbid_charge",),
+    ),
+    SitSolarBinaryDescription(
+        key="battery2_discharge_forbidden",
+        translation_key="battery2_discharge_forbidden",
+        # 32270 (library 0.3.0): second battery's mirror of 32070.
+        compute=lambda data: _flag_on(data, "battery2_forbid_discharge"),
+        requires=("battery2_forbid_discharge",),
     ),
 )
 

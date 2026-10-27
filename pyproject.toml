@@ -1,6 +1,6 @@
 [project]
 name = "sitsolar-ha"
-version = "1.0.0"
+version = "1.1.0"
 description = "Home Assistant custom integration for Sit Solar / Futura Sun hybrid inverters via the Si-Dongle-L WiFi dongle"
 readme = "README.md"
 license = { text = "GPL-3.0-or-later" }

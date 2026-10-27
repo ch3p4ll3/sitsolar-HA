@@ -138,12 +138,18 @@ def dsp_error_words(poll: Mapping[str, Any]) -> dict[str, int]:
 
 
 def battery_error_words(poll: Mapping[str, Any]) -> dict[str, int]:
-    """Nonzero battery error/warning/protection words (32072-32080)."""
+    """Nonzero battery error/warning/protection words (32072-32080).
+
+    Also covers the second battery's mirror block (32272-32280, library
+    0.3.0); keys appear under their own names when nonzero.
+    """
+    kinds = ("error", "warning", "protection")
     return nonzero_error_words(
         poll,
         tuple(
-            f"battery_{kind}{i}"
-            for kind in ("error", "warning", "protection")
+            f"{prefix}_{kind}{i}"
+            for prefix in ("battery", "battery2")
+            for kind in kinds
             for i in range(1, 4)
         ),
     )

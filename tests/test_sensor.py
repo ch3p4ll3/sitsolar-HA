@@ -191,6 +191,139 @@ async def test_battery_forbidden_binary_sensors(
     )
 
 
+async def test_battery2_entities(
+    hass: HomeAssistant, dongle: Any, mock_entry: Any
+) -> None:
+    """The second battery block (library 0.3.0) mirrors the first one."""
+    # battery2_power = +111 (discharging) and battery2_current = +2.1.
+    dongle.poll_result = make_poll(
+        overrides={"battery2_power": 111, "battery2_current": 2.1}
+    )
+    mock_entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(mock_entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert state_for(hass, "sensor", "battery2_soc").state == "82"
+    assert state_for(hass, "sensor", "battery2_cycles").state == "45"
+    assert float(state_for(hass, "sensor", "battery2_power").state) == 111.0
+
+    # The computed split works off battery2_power, not battery_power.
+    assert float(state_for(hass, "sensor", "battery2_discharge_power").state) == 111.0
+    assert float(state_for(hass, "sensor", "battery2_charge_power").state) == 0.0
+    assert state_for(hass, "sensor", "battery2_flow").state == "discharging"
+    assert (
+        float(state_for(hass, "sensor", "battery2_discharge_current").state)
+        == pytest.approx(2.1)
+    )
+
+    # Enum maps are shared with battery 1.
+    assert state_for(hass, "sensor", "battery2_status").state == "charging"
+    assert state_for(hass, "sensor", "battery2_bms_status").state == "ok"
+
+    # The forbid flags of battery 2 get their own binary sensors.
+    assert state_for(hass, "binary_sensor", "battery2_charge_forbidden").state == "off"
+    assert (
+        state_for(hass, "binary_sensor", "battery2_discharge_forbidden").state == "off"
+    )
+
+    # Battery 2's signed current carries the same sign-convention attribute.
+    power = state_for(hass, "sensor", "battery2_power")
+    assert "discharge" in power.attributes["sign_convention"]
+
+
+async def test_battery2_forbidden_binary_sensors(
+    hass: HomeAssistant, dongle: Any, mock_entry: Any
+) -> None:
+    """Battery 2's forbid flags flip their own binary sensors."""
+    dongle.poll_result = make_poll(
+        overrides={"battery2_forbid_charge": 1, "battery2_forbid_discharge": 1}
+    )
+    mock_entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(mock_entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert state_for(hass, "binary_sensor", "battery2_charge_forbidden").state == "on"
+    assert (
+        state_for(hass, "binary_sensor", "battery2_discharge_forbidden").state == "on"
+    )
+
+
+async def test_meter2_and_self_test_entities(
+    hass: HomeAssistant, dongle: Any, mock_entry: Any
+) -> None:
+    """The second meter and the self-test registers (library 0.3.0)."""
+    dongle.poll_result = make_poll(
+        overrides={"meter_testing_result": 0xAA55, "meter2_r_current": 14.2}
+    )
+    mock_entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(mock_entry.entry_id)
+    await hass.async_block_till_done()
+
+    # meter2 total P: -190 W (importing) like meter 1's sign convention.
+    assert float(state_for(hass, "sensor", "meter2_total_p").state) == -190.0
+    total_p = state_for(hass, "sensor", "meter2_total_p")
+    assert "import" in total_p.attributes["sign_convention"]
+
+    # meter2_r_current gets the same 0.1 -> 0.01 scale correction as meter 1:
+    # encoded at the protocol's 0.1 scale, then multiplied by factor 0.1.
+    current = state_for(hass, "sensor", "meter2_r_current")
+    assert float(current.state) == pytest.approx(1.42)
+    assert "scale corrected" in current.attributes["note"]
+
+    # The meter 2 energy totals are lifetime counters.
+    assert state_for(hass, "sensor", "meter2_energy_to_grid_total").state == "55.4"
+
+    # The self-test result enum maps its raw codes to translated slugs:
+    # 0xAA55 is the "still testing" sentinel.
+    assert state_for(hass, "sensor", "meter_testing_result").state == "testing"
+
+    # The progress sensor exists but is a disabled-by-default diagnostic.
+    from homeassistant.helpers import entity_registry as er
+
+    reg_entry = er.async_get(hass).async_get_entity_id(
+        "sensor", "sitsolar", "INV1234567_meter_testing_process"
+    )
+    assert reg_entry is not None
+    entry = er.async_get(hass).async_get(reg_entry)
+    assert entry.disabled_by is er.RegistryEntryDisabler.INTEGRATION
+
+    # S/T-phase entities of meter 2 follow the same three-phase gate.
+    assert state_for(hass, "sensor", "meter2_s_voltage") is None
+
+
+async def test_meter_testing_result_enum(
+    hass: HomeAssistant, dongle: Any, mock_entry: Any
+) -> None:
+    """A non-sentinel self-test code maps to its own slug."""
+    dongle.poll_result = make_poll(overrides={"meter_testing_result": 9})
+    mock_entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(mock_entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert state_for(hass, "sensor", "meter_testing_result").state == "ct_not_connected"
+
+
+async def test_unreadable_battery2_and_meter2_blocks_hide_entities(
+    hass: HomeAssistant, dongle: Any, mock_entry: Any
+) -> None:
+    """Units without a second battery/meter refuse those ranges: no entities."""
+    dongle.poll_result = make_poll(
+        unreadable_sections=("battery2_parameters", "meter2_parameters")
+    )
+    mock_entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(mock_entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert state_for(hass, "sensor", "battery2_soc") is None
+    assert state_for(hass, "sensor", "battery2_power") is None
+    assert state_for(hass, "binary_sensor", "battery2_charge_forbidden") is None
+    assert state_for(hass, "sensor", "meter2_total_p") is None
+    assert state_for(hass, "sensor", "meter2_r_voltage") is None
+    # The first battery and meter keep working.
+    assert state_for(hass, "sensor", "battery_soc") is not None
+    assert state_for(hass, "sensor", "meter_total_p") is not None
+
+
 async def test_device_info_populated(
     hass: HomeAssistant, dongle: Any, mock_entry: Any
 ) -> None:

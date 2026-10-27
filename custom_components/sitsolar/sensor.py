@@ -16,7 +16,16 @@ Hardware quirks handled here (see docs/ENTITIES.md for the rationale):
   as a disabled diagnostic entity.
 * ``meter_r_current`` (33002) is scaled 0.1 by the protocol document but
   current/voltage/power ratios on real hardware indicate 0.01; the value is
-  corrected here (factor 0.1) with the raw scale kept in the attribute.
+  corrected here (factor 0.1) with the raw scale kept in the attribute.  The
+  second meter's currents (33102/33107/33112, library 0.3.0) carry the same
+  doubt and get the same correction.
+
+Library 0.3.0 (protocol v0.0.7) added the second battery block
+(``battery2_*``), the optional second meter (``meter2_*``) and the meter
+self-test registers (``meter_testing_*``); they are exposed here with the
+same names, units and corrections as their first-battery/first-meter
+counterparts.  Units without a second battery or meter refuse those ranges,
+so the entities are simply not created there.
 """
 
 from __future__ import annotations
@@ -76,31 +85,33 @@ def _value(data: SitSolarData, key: str) -> float | None:
     return cast(float, reading["value"])
 
 
-def _battery_flow(data: SitSolarData) -> str | None:
+def _battery_flow(data: SitSolarData, key: str = "battery_power") -> str | None:
     """Charge/discharge/idle enum from the sign of battery power."""
-    power = _value(data, "battery_power")
+    power = _value(data, key)
     if power is None:
         return None
     return "discharging" if power > 0 else "charging" if power < 0 else "idle"
 
 
-def _charge_power(data: SitSolarData) -> float | None:
-    power = _value(data, "battery_power")
+def _charge_power(data: SitSolarData, key: str = "battery_power") -> float | None:
+    power = _value(data, key)
     return None if power is None else max(0.0, -power)
 
 
-def _discharge_power(data: SitSolarData) -> float | None:
-    power = _value(data, "battery_power")
+def _discharge_power(data: SitSolarData, key: str = "battery_power") -> float | None:
+    power = _value(data, key)
     return None if power is None else max(0.0, power)
 
 
-def _charge_current(data: SitSolarData) -> float | None:
-    current = _value(data, "battery_current")
+def _charge_current(data: SitSolarData, key: str = "battery_current") -> float | None:
+    current = _value(data, key)
     return None if current is None else max(0.0, -current)
 
 
-def _discharge_current(data: SitSolarData) -> float | None:
-    current = _value(data, "battery_current")
+def _discharge_current(
+    data: SitSolarData, key: str = "battery_current"
+) -> float | None:
+    current = _value(data, key)
     return None if current is None else max(0.0, current)
 
 
@@ -198,12 +209,26 @@ OPERATION_STATUS = {
 }
 BATTERY_STATUS = {0: "sleep", 1: "charging", 2: "discharging", 3: "idle"}
 BMS_STATUS = {0: "fail", 1: "ok", 2: "not_chosen"}
-MPPT_INPUT_TYPE = {
-    0: "no_input",
-    1: "single_string",
-    2: "two_parallel",
-    3: "different_panels",
-    4: "same_panels",
+# v0.0.7 (change D006) reduced this enum from five values to two; codes 2-4
+# only appear on firmware older than the protocol the library transcribes.
+MPPT_INPUT_TYPE = {0: "independent_input", 1: "same_panels_parallel"}
+# v0.0.7 (change D007): result of the meter self test, 33049.  0xAA55 is the
+# "still testing" sentinel and is the only non-sequential code.
+METER_TEST_RESULT = {
+    0xAA55: "testing",
+    1: "meter_comms_fail",
+    2: "battery_comms_fail",
+    3: "meter_ln_reversed",
+    4: "meter_check_successful",
+    5: "meter_disabled",
+    6: "load_fluctuation_too_large",
+    7: "inverter_not_working",
+    8: "other_fail",
+    9: "ct_not_connected",
+    16: "current_lower_than_required",
+    17: "incorrect_meter_wiring",
+    18: "meter_inverter_interaction_failed",
+    19: "meter_self_test_failed",
 }
 
 SENSOR_DESCRIPTIONS: tuple[SitSolarSensorDescription, ...] = (
@@ -823,6 +848,199 @@ SENSOR_DESCRIPTIONS: tuple[SitSolarSensorDescription, ...] = (
         native_unit_of_measurement=UnitOfPower.WATT,
         suggested_display_precision=0,
     ),
+    # -- meter self test (library 0.3.0, protocol v0.0.7 change D007) ------
+    SitSolarSensorDescription(
+        key="meter_testing_process",
+        translation_key="meter_testing_process",
+        library_key="meter_testing_process",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=PERCENTAGE,
+        suggested_display_precision=0,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+    ),
+    SitSolarSensorDescription(
+        key="meter_testing_result",
+        translation_key="meter_testing_result",
+        library_key="meter_testing_result",
+        device_class=SensorDeviceClass.ENUM,
+        options=[*METER_TEST_RESULT.values(), "unknown"],
+        enum_map=METER_TEST_RESULT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    # -- meter 2 (library 0.3.0, protocol v0.0.7 change D009) --------------
+    # A verbatim mirror of the meter block at +100, for the optional second
+    # meter; units without it refuse the range, so no entities are created.
+    SitSolarSensorDescription(
+        key="meter2_total_p",
+        translation_key="meter2_total_p",
+        library_key="meter2_total_p",
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfPower.WATT,
+        suggested_display_precision=0,
+    ),
+    SitSolarSensorDescription(
+        key="meter2_total_q",
+        translation_key="meter2_total_q",
+        library_key="meter2_total_q",
+        device_class=SensorDeviceClass.REACTIVE_POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfReactivePower.VOLT_AMPERE_REACTIVE,
+        suggested_display_precision=0,
+    ),
+    SitSolarSensorDescription(
+        key="meter2_power_factor",
+        translation_key="meter2_power_factor",
+        library_key="meter2_power_factor",
+        device_class=SensorDeviceClass.POWER_FACTOR,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=2,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+    ),
+    SitSolarSensorDescription(
+        key="meter2_energy_to_grid_total",
+        translation_key="meter2_energy_to_grid_total",
+        library_key="meter2_energy_to_grid_total",
+        device_class=SensorDeviceClass.ENERGY,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        suggested_display_precision=1,
+        zero_is_unavailable=True,
+    ),
+    SitSolarSensorDescription(
+        key="meter2_energy_from_grid_total",
+        translation_key="meter2_energy_from_grid_total",
+        library_key="meter2_energy_from_grid_total",
+        device_class=SensorDeviceClass.ENERGY,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        suggested_display_precision=1,
+        zero_is_unavailable=True,
+    ),
+    SitSolarSensorDescription(
+        key="meter2_r_voltage",
+        translation_key="meter2_r_voltage",
+        library_key="meter2_r_voltage",
+        device_class=SensorDeviceClass.VOLTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfElectricPotential.VOLT,
+        suggested_display_precision=1,
+    ),
+    SitSolarSensorDescription(
+        key="meter2_r_current",
+        translation_key="meter2_r_current",
+        library_key="meter2_r_current",
+        device_class=SensorDeviceClass.CURRENT,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
+        # Same unverified 0.1 scale as the R phase (33002); corrected to 0.01.
+        factor=0.1,
+        suggested_display_precision=3,
+    ),
+    SitSolarSensorDescription(
+        key="meter2_r_frequency",
+        translation_key="meter2_r_frequency",
+        library_key="meter2_r_frequency",
+        device_class=SensorDeviceClass.FREQUENCY,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfFrequency.HERTZ,
+        suggested_display_precision=2,
+    ),
+    SitSolarSensorDescription(
+        key="meter2_r_power",
+        translation_key="meter2_r_power",
+        library_key="meter2_r_power",
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfPower.WATT,
+        suggested_display_precision=0,
+    ),
+    SitSolarSensorDescription(
+        key="meter2_s_voltage",
+        translation_key="meter2_s_voltage",
+        library_key="meter2_s_voltage",
+        three_phase=True,
+        device_class=SensorDeviceClass.VOLTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfElectricPotential.VOLT,
+        suggested_display_precision=1,
+    ),
+    SitSolarSensorDescription(
+        key="meter2_s_current",
+        translation_key="meter2_s_current",
+        library_key="meter2_s_current",
+        three_phase=True,
+        device_class=SensorDeviceClass.CURRENT,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
+        # Same unverified 0.1 scale as the R phase (33002); corrected to 0.01.
+        factor=0.1,
+        suggested_display_precision=3,
+    ),
+    SitSolarSensorDescription(
+        key="meter2_s_frequency",
+        translation_key="meter2_s_frequency",
+        library_key="meter2_s_frequency",
+        three_phase=True,
+        device_class=SensorDeviceClass.FREQUENCY,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfFrequency.HERTZ,
+        suggested_display_precision=2,
+    ),
+    SitSolarSensorDescription(
+        key="meter2_s_power",
+        translation_key="meter2_s_power",
+        library_key="meter2_s_power",
+        three_phase=True,
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfPower.WATT,
+        suggested_display_precision=0,
+    ),
+    SitSolarSensorDescription(
+        key="meter2_t_voltage",
+        translation_key="meter2_t_voltage",
+        library_key="meter2_t_voltage",
+        three_phase=True,
+        device_class=SensorDeviceClass.VOLTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfElectricPotential.VOLT,
+        suggested_display_precision=1,
+    ),
+    SitSolarSensorDescription(
+        key="meter2_t_current",
+        translation_key="meter2_t_current",
+        library_key="meter2_t_current",
+        three_phase=True,
+        device_class=SensorDeviceClass.CURRENT,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
+        # Same unverified 0.1 scale as the R phase (33002); corrected to 0.01.
+        factor=0.1,
+        suggested_display_precision=3,
+    ),
+    SitSolarSensorDescription(
+        key="meter2_t_frequency",
+        translation_key="meter2_t_frequency",
+        library_key="meter2_t_frequency",
+        three_phase=True,
+        device_class=SensorDeviceClass.FREQUENCY,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfFrequency.HERTZ,
+        suggested_display_precision=2,
+    ),
+    SitSolarSensorDescription(
+        key="meter2_t_power",
+        translation_key="meter2_t_power",
+        library_key="meter2_t_power",
+        three_phase=True,
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfPower.WATT,
+        suggested_display_precision=0,
+    ),
     # -- battery ----------------------------------------------------------
     SitSolarSensorDescription(
         key="battery_soc",
@@ -1031,6 +1249,224 @@ SENSOR_DESCRIPTIONS: tuple[SitSolarSensorDescription, ...] = (
         key="lowest_cell_temperature",
         translation_key="lowest_cell_temperature",
         library_key="lowest_cell_temperature",
+        device_class=SensorDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+    ),
+    # -- battery 2 (library 0.3.0, protocol v0.0.7 change D005) ------------
+    # A verbatim mirror of the battery block at +200, only present on
+    # inverters with two BMS interfaces; single-battery units refuse the
+    # range (or return zeros), so these entities simply never get created.
+    SitSolarSensorDescription(
+        key="battery2_soc",
+        translation_key="battery2_soc",
+        library_key="battery2_soc",
+        device_class=SensorDeviceClass.BATTERY,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=PERCENTAGE,
+        suggested_display_precision=0,
+    ),
+    SitSolarSensorDescription(
+        key="battery2_soh",
+        translation_key="battery2_soh",
+        library_key="battery2_soh",
+        device_class=SensorDeviceClass.BATTERY,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=PERCENTAGE,
+        suggested_display_precision=0,
+    ),
+    SitSolarSensorDescription(
+        key="battery2_voltage",
+        translation_key="battery2_voltage",
+        library_key="battery2_voltage",
+        device_class=SensorDeviceClass.VOLTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfElectricPotential.VOLT,
+        suggested_display_precision=1,
+    ),
+    SitSolarSensorDescription(
+        key="battery2_current",
+        translation_key="battery2_current",
+        library_key="battery2_current",
+        device_class=SensorDeviceClass.CURRENT,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
+        suggested_display_precision=2,
+    ),
+    SitSolarSensorDescription(
+        key="battery2_power",
+        translation_key="battery2_power",
+        library_key="battery2_power",
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfPower.WATT,
+        suggested_display_precision=0,
+    ),
+    SitSolarSensorDescription(
+        key="battery2_charge_power",
+        translation_key="battery2_charge_power",
+        compute=lambda data: _charge_power(data, "battery2_power"),
+        requires=("battery2_power",),
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfPower.WATT,
+        suggested_display_precision=0,
+    ),
+    SitSolarSensorDescription(
+        key="battery2_discharge_power",
+        translation_key="battery2_discharge_power",
+        compute=lambda data: _discharge_power(data, "battery2_power"),
+        requires=("battery2_power",),
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfPower.WATT,
+        suggested_display_precision=0,
+    ),
+    SitSolarSensorDescription(
+        key="battery2_charge_current",
+        translation_key="battery2_charge_current",
+        compute=lambda data: _charge_current(data, "battery2_current"),
+        requires=("battery2_current",),
+        device_class=SensorDeviceClass.CURRENT,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
+        suggested_display_precision=2,
+    ),
+    SitSolarSensorDescription(
+        key="battery2_discharge_current",
+        translation_key="battery2_discharge_current",
+        compute=lambda data: _discharge_current(data, "battery2_current"),
+        requires=("battery2_current",),
+        device_class=SensorDeviceClass.CURRENT,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
+        suggested_display_precision=2,
+    ),
+    SitSolarSensorDescription(
+        key="battery2_flow",
+        translation_key="battery2_flow",
+        compute=lambda data: _battery_flow(data, "battery2_power"),
+        requires=("battery2_power",),
+        device_class=SensorDeviceClass.ENUM,
+        options=["charging", "discharging", "idle"],
+    ),
+    SitSolarSensorDescription(
+        key="battery2_status",
+        translation_key="battery2_status",
+        library_key="battery2_status",
+        device_class=SensorDeviceClass.ENUM,
+        options=[*BATTERY_STATUS.values(), "unknown"],
+        enum_map=BATTERY_STATUS,
+    ),
+    SitSolarSensorDescription(
+        key="battery2_bms_status",
+        translation_key="battery2_bms_status",
+        library_key="battery2_bms_status",
+        device_class=SensorDeviceClass.ENUM,
+        options=[*BMS_STATUS.values(), "unknown"],
+        enum_map=BMS_STATUS,
+    ),
+    SitSolarSensorDescription(
+        key="battery2_temperature",
+        translation_key="battery2_temperature",
+        library_key="battery2_temperature",
+        device_class=SensorDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+    ),
+    SitSolarSensorDescription(
+        key="battery2_cycles",
+        translation_key="battery2_cycles",
+        library_key="battery2_cycles",
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        suggested_display_precision=0,
+        zero_is_unavailable=True,
+    ),
+    SitSolarSensorDescription(
+        key="battery2_max_charge_voltage",
+        translation_key="battery2_max_charge_voltage",
+        library_key="battery2_max_charge_voltage",
+        device_class=SensorDeviceClass.VOLTAGE,
+        native_unit_of_measurement=UnitOfElectricPotential.VOLT,
+        suggested_display_precision=1,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    SitSolarSensorDescription(
+        key="battery2_max_charge_current",
+        translation_key="battery2_max_charge_current",
+        library_key="battery2_max_charge_current",
+        device_class=SensorDeviceClass.CURRENT,
+        native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
+        suggested_display_precision=2,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    SitSolarSensorDescription(
+        key="battery2_min_discharge_voltage",
+        translation_key="battery2_min_discharge_voltage",
+        library_key="battery2_min_discharge_voltage",
+        device_class=SensorDeviceClass.VOLTAGE,
+        native_unit_of_measurement=UnitOfElectricPotential.VOLT,
+        suggested_display_precision=1,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    SitSolarSensorDescription(
+        key="battery2_max_discharge_current",
+        translation_key="battery2_max_discharge_current",
+        library_key="battery2_max_discharge_current",
+        device_class=SensorDeviceClass.CURRENT,
+        native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
+        suggested_display_precision=2,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    SitSolarSensorDescription(
+        key="battery2_forced_mode_request",
+        translation_key="battery2_forced_mode_request",
+        library_key="battery2_forced_mode_request",
+        suggested_display_precision=0,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+    ),
+    SitSolarSensorDescription(
+        key="battery2_highest_cell_voltage",
+        translation_key="battery2_highest_cell_voltage",
+        library_key="battery2_highest_cell_voltage",
+        device_class=SensorDeviceClass.VOLTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfElectricPotential.VOLT,
+        suggested_display_precision=3,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+    ),
+    SitSolarSensorDescription(
+        key="battery2_lowest_cell_voltage",
+        translation_key="battery2_lowest_cell_voltage",
+        library_key="battery2_lowest_cell_voltage",
+        device_class=SensorDeviceClass.VOLTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfElectricPotential.VOLT,
+        suggested_display_precision=3,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+    ),
+    SitSolarSensorDescription(
+        key="battery2_highest_cell_temperature",
+        translation_key="battery2_highest_cell_temperature",
+        library_key="battery2_highest_cell_temperature",
+        device_class=SensorDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+    ),
+    SitSolarSensorDescription(
+        key="battery2_lowest_cell_temperature",
+        translation_key="battery2_lowest_cell_temperature",
+        library_key="battery2_lowest_cell_temperature",
         device_class=SensorDeviceClass.TEMPERATURE,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         state_class=SensorStateClass.MEASUREMENT,
@@ -1394,9 +1830,14 @@ class SitSolarSensor(SitSolarEntity, SensorEntity):
         """Sign conventions and quirk notes for the values that need them."""
         key = self.entity_description.key
         attrs: dict[str, Any] = {}
-        if key in {"battery_current", "battery_power"}:
+        if key in {
+            "battery_current",
+            "battery_power",
+            "battery2_current",
+            "battery2_power",
+        }:
             attrs["sign_convention"] = "positive = discharge, negative = charge"
-        if key == "meter_total_p":
+        if key in {"meter_total_p", "meter2_total_p"}:
             attrs["sign_convention"] = "positive = export to grid, negative = import"
         if key == "grid_exchange_power":
             attrs["sign_convention"] = "positive = import, negative = export"
@@ -1405,7 +1846,7 @@ class SitSolarSensor(SitSolarEntity, SensorEntity):
                 "estimate from DC-side values (PV + battery - grid exchange); "
                 "inverter conversion losses are not accounted for"
             )
-        if key == "meter_r_current":
+        if key in {"meter_r_current", "meter2_r_current"}:
             attrs["note"] = (
                 "scale corrected from 0.1 to 0.01 (protocol document value "
                 "fails a V*I vs P consistency check)"
