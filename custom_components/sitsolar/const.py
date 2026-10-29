@@ -34,6 +34,18 @@ REQUEST_TIMEOUT: Final = 15.0
 # late reply anyway, the pause only exists to ride out a momentary blip.
 POLL_RETRY_DELAY: Final = 2.0
 
+# How many consecutive polls a total_increasing counter may read *below* its
+# last published value before that drop is accepted as a real reset.  The
+# recorder treats a dip below 90 % of the previous value as a meter reset and
+# counts the whole next reading as fresh consumption, so a single bogus low
+# reading (the dongle returning zeros while it re-establishes the inverter
+# session after a reconnect) would put the entire counter into the Energy
+# dashboard.  3 polls (~90 s at the default interval) is longer than any
+# reconnect artefact observed and short enough that a genuine reset - the
+# midnight rollover of the ``today`` counters, a replaced counter - only
+# shows up a minute or so late.
+COUNTER_DROP_CONFIRM_POLLS: Final = 3
+
 PLATFORMS: Final[list[Platform]] = [Platform.SENSOR, Platform.BINARY_SENSOR]
 
 # Diagnostic sensors are created disabled by default.

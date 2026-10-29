@@ -89,7 +89,7 @@ The dongle serial is the HMAC key. Re-check the serial printed on the dongle
 (the config flow validates it before creating the entry). If it keeps failing
 after a dongle replacement, use the reauth flow to enter the new serial.
 
-### Entities go unavailable every ~75 seconds, or the dongle drops out
+### The dongle drops out, or entities stop updating
 
 The Si-Dongle-L **refuses new TCP connections for about 75 seconds** after a
 dropped or closed session (it serves one connection at a time). The integration
@@ -99,15 +99,29 @@ accounts for this:
   dongle's ~37 s heartbeat), so a healthy connection is never torn down and
   never triggers the lockout.
 * A single **request timeout** on an otherwise live connection is retried
-  **once** before the update fails, so one WiFi blip does not make the entities
-  unavailable for a cycle.
+  **once** before the update fails, so one WiFi blip does not cost a poll.
 * If the connection is genuinely lost, it backs off for **90 s** — longer than
   the 75 s lockout — before reconnecting, instead of hammering the dongle.
+* While the connection is down the entities **keep their last known values**,
+  flagged as *assumed state* (the "i" icon), instead of flipping to
+  `unavailable`. Unavailable gaps punch holes into the recorder's statistics,
+  and helpers that turn `unavailable` into 0 feed the Energy dashboard bogus
+  zeros. The data age is visible in the *last successful update* diagnostic
+  sensor (disabled by default).
+* A `total_increasing` counter that suddenly reads **less** than before (the
+  dongle returning zeros while it re-establishes the inverter session after a
+  reconnect) **holds its last value for 3 polls** before the drop is accepted
+  as a real reset. A single bogus zero would otherwise make the recorder treat
+  it as a meter reset and count the whole counter as fresh consumption in the
+  Energy dashboard. Legitimate resets — the midnight rollover of the `today`
+  counters, a replaced counter — show up about 90 s late at the default
+  polling interval.
 
-If you still see flapping, make sure nothing else (another poller, a second
-Home Assistant instance, the CLI) is connecting to the same dongle at the same
-time, and that your polling interval is at least 15 s. Lower the polling
-frequency in **Options** if the dongle is slow to answer.
+If you still see long stretches of stale values, make sure nothing else
+(another poller, a second Home Assistant instance, the CLI) is connecting to
+the same dongle at the same time, and that your polling interval is at least
+15 s. Lower the polling frequency in **Options** if the dongle is slow to
+answer.
 
 ### A whole group of entities is missing
 

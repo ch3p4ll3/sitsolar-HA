@@ -103,7 +103,7 @@ async def test_unreachable_host_sets_up_retry(
 async def test_poll_failure_then_recovery(
     hass: HomeAssistant, dongle: Any, mock_entry: Any
 ) -> None:
-    """After a failed poll the entities go unavailable, then recover."""
+    """A failed poll keeps the last known values, marked as assumed."""
     from sitsolar_dongle import ModbusError
 
     mock_entry.add_to_hass(hass)
@@ -119,7 +119,12 @@ async def test_poll_failure_then_recovery(
     await hass.async_block_till_done()
 
     assert coordinator.last_update_success is False
-    assert state_for(hass, "sensor", "battery_soc").state == "unavailable"
+    # Entities keep the last known value instead of going unavailable, so no
+    # gap appears in the recorder history; the state is flagged as assumed.
+    state = state_for(hass, "sensor", "battery_soc")
+    assert state.state == "64"
+    assert state.attributes["assumed_state"] is True
+    assert state_for(hass, "binary_sensor", "battery_charge_forbidden").state == "off"
 
     # The exception clears and the very next poll recovers.
     dongle.client.poll_exception = None
@@ -127,7 +132,9 @@ async def test_poll_failure_then_recovery(
     await hass.async_block_till_done()
 
     assert coordinator.last_update_success is True
-    assert state_for(hass, "sensor", "battery_soc").state == "64"
+    state = state_for(hass, "sensor", "battery_soc")
+    assert state.state == "64"
+    assert "assumed_state" not in state.attributes
 
 
 async def test_poll_timeout_is_retried_once(
@@ -184,7 +191,8 @@ async def test_poll_timeout_retries_only_once(
 
     assert client.poll_calls == polls_before + 2  # exactly one retry, no loop
     assert coordinator.last_update_success is False
-    assert state_for(hass, "sensor", "battery_soc").state == "unavailable"
+    # The last known value is kept (flagged as assumed) rather than lost.
+    assert state_for(hass, "sensor", "battery_soc").state == "64"
     # The connection is still considered alive, so no backoff is armed and
     # the next tick polls normally instead of sitting out the lockout.
     assert coordinator._reconnect_deadline == 0.0

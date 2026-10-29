@@ -343,3 +343,76 @@ async def test_device_info_populated(
     assert device.serial_number == "INV1234567"
     # sw_version aggregates DSP1/DSP2/ARM versions.
     assert device.sw_version
+
+
+async def test_counter_zero_dip_is_held(
+    hass: HomeAssistant, dongle: Any, mock_entry: Any
+) -> None:
+    """A single bogus low reading of a total_increasing counter never shows.
+
+    The recorder treats a dip below 90 % of the previous value as a meter
+    reset and then counts the whole next reading as fresh consumption, so one
+    zero (the dongle returning zeros while it re-establishes the inverter
+    session after a reconnect) would put the entire counter into the Energy
+    dashboard's consumption sum.
+    """
+    mock_entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(mock_entry.entry_id)
+    await hass.async_block_till_done()
+    coordinator = mock_entry.runtime_data
+
+    counter = state_for(hass, "sensor", "energy_from_pv_total")
+    assert counter.state == "5123.4"
+
+    # One poll reads 0 ...
+    dongle.client.poll_result = make_poll(overrides={"energy_from_pv_total": 0})
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+
+    held = state_for(hass, "sensor", "energy_from_pv_total")
+    assert held.state == "5123.4"  # the dip is held back, not published
+    assert "assumed_state" not in held.attributes  # the poll itself succeeded
+
+    # ... and the next real reading continues as if nothing had happened.
+    dongle.client.poll_result = make_poll(overrides={"energy_from_pv_total": 5123.5})
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+
+    assert state_for(hass, "sensor", "energy_from_pv_total").state == "5123.5"
+
+
+async def test_persistent_counter_drop_is_accepted_as_reset(
+    hass: HomeAssistant, dongle: Any, mock_entry: Any
+) -> None:
+    """A drop that survives COUNTER_DROP_CONFIRM_POLLS polls is a real reset.
+
+    This keeps the legitimate resets working: the midnight rollover of the
+    daily counters, a replaced lifetime counter.
+    """
+    from custom_components.sitsolar.const import COUNTER_DROP_CONFIRM_POLLS
+
+    mock_entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(mock_entry.entry_id)
+    await hass.async_block_till_done()
+    coordinator = mock_entry.runtime_data
+
+    today = state_for(hass, "sensor", "energy_today_dc")
+    assert today.state == "24.3"
+
+    # The daily counter rolls over at midnight: 24.3 -> 0.0, and it stays 0.
+    dongle.client.poll_result = make_poll(overrides={"energy_today_dc": 0})
+    for _ in range(COUNTER_DROP_CONFIRM_POLLS - 1):
+        await coordinator.async_refresh()
+        await hass.async_block_till_done()
+        assert state_for(hass, "sensor", "energy_today_dc").state == "24.3"
+
+    # The last consecutive low poll lets the reset through.
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+    assert float(state_for(hass, "sensor", "energy_today_dc").state) == 0.0
+
+    # Counting resumes from the new base.
+    dongle.client.poll_result = make_poll(overrides={"energy_today_dc": 0.1})
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+    assert float(state_for(hass, "sensor", "energy_today_dc").state) == 0.1

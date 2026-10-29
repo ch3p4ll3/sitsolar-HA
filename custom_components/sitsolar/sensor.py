@@ -19,6 +19,12 @@ Hardware quirks handled here (see docs/ENTITIES.md for the rationale):
   corrected here (factor 0.1) with the raw scale kept in the attribute.  The
   second meter's currents (33102/33107/33112, library 0.3.0) carry the same
   doubt and get the same correction.
+* A ``total_increasing`` counter that reads *below* its last published value
+  holds that value for a few polls before the drop is let through (see
+  ``SitSolarSensor._resolve_counter``): the recorder would otherwise treat a
+  single bogus low reading - the dongle returning zeros while it
+  re-establishes the inverter session after a reconnect - as a meter reset
+  and add the whole counter to the Energy dashboard's consumption sum.
 
 Library 0.3.0 (protocol v0.0.7) added the second battery block
 (``battery2_*``), the optional second meter (``meter2_*``) and the meter
@@ -61,7 +67,7 @@ from homeassistant.helpers.typing import StateType
 from homeassistant.util import dt as dt_util
 
 from . import SitSolarConfigEntry
-from .const import LIFETIME_COUNTER_KEYS
+from .const import COUNTER_DROP_CONFIRM_POLLS, LIFETIME_COUNTER_KEYS
 from .coordinator import (
     SitSolarCoordinator,
     SitSolarData,
@@ -1778,6 +1784,13 @@ class SitSolarSensor(SitSolarEntity, SensorEntity):
         super().__init__(coordinator, description.key)
         self.entity_description = description
         self._attr_options = description.options
+        # Drop protection for total_increasing counters (see _resolve_counter):
+        # the poll currently handed to HA, the value handed over, the last
+        # accepted value, and how many consecutive polls read below it.
+        self._tracked_data: SitSolarData | None = None
+        self._published_value: float | int | None = None
+        self._held_value: float | int | None = None
+        self._drop_polls = 0
 
     @property
     def native_value(self) -> StateType | datetime | None:
@@ -1796,7 +1809,63 @@ class SitSolarSensor(SitSolarEntity, SensorEntity):
             value = value * description.factor
             if isinstance(value, float):
                 value = round(value, 3)
+        if self._holds_counter_drops:
+            return self._counter_value(value)
         return cast(StateType, value)
+
+    @property
+    def _holds_counter_drops(self) -> bool:
+        """True for raw ``total_increasing`` counters.
+
+        Their long-term statistics break on a single bogus low reading (see
+        ``_resolve_counter``); computed entities and enums are exempt.
+        """
+        description = self.entity_description
+        return (
+            description.library_key is not None
+            and description.state_class is SensorStateClass.TOTAL_INCREASING
+        )
+
+    def _counter_value(self, value: float | int) -> float | int:
+        """Value to hand to HA for this poll, with drops held back.
+
+        Evaluated once per successful poll: the coordinator hands out a
+        fresh ``SitSolarData`` object every time, so object identity tracks
+        the poll without relying on the clock.  A failed poll keeps the old
+        object, and therefore the old value, so this never advances while
+        the connection is down.
+        """
+        data = self.coordinator.data
+        if data is not self._tracked_data:
+            self._tracked_data = data
+            self._published_value = self._resolve_counter(value)
+        return cast(float | int, self._published_value)
+
+    def _resolve_counter(self, value: float | int) -> float | int:
+        """Hold a counter that reads below its last published value.
+
+        The recorder treats a dip below 90 % of the previous state of a
+        ``total_increasing`` sensor as a meter reset and then counts the
+        whole next reading as fresh consumption: one bogus zero (the dongle
+        returning zeros while it re-establishes the inverter session after a
+        reconnect) would put the entire counter into the Energy dashboard.
+        The drop has to survive ``COUNTER_DROP_CONFIRM_POLLS`` consecutive
+        polls before it is let through as a real reset - the midnight
+        rollover of the ``today`` counters, a replaced counter.  A value
+        that recovers in the meantime was a glitch and is simply dropped.
+        """
+        previous = self._held_value
+        if previous is None or value >= previous:
+            self._held_value = value
+            self._drop_polls = 0
+            return value
+        self._drop_polls += 1
+        if self._drop_polls >= COUNTER_DROP_CONFIRM_POLLS:
+            # Persistent: take it as a genuine reset and count from here.
+            self._held_value = value
+            self._drop_polls = 0
+            return value
+        return previous
 
     def _is_zero_locked(self) -> bool:
         """True when a lifetime counter reads 0 and has never been nonzero."""
