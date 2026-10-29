@@ -4,10 +4,10 @@
   "codeowners": ["@ch3p4ll3"],
   "config_flow": true,
   "dependencies": [],
-  "documentation": "https://github.com/ch3p4ll3/sit-solar-ha",
+  "documentation": "https://github.com/ch3p4ll3/sitsolar-ha",
   "integration_type": "hub",
   "iot_class": "local_polling",
-  "issue_tracker": "https://github.com/ch3p4ll3/sit-solar-ha/issues",
+  "issue_tracker": "https://github.com/ch3p4ll3/sitsolar-ha/issues",
   "loggers": ["custom_components.sitsolar", "sitsolar_dongle"],
   "requirements": ["sitsolar-dongle==0.3.0"],
   "version": "1.1.0"
